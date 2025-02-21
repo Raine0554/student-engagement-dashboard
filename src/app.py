@@ -37,6 +37,17 @@ df = load_data()
 
 st.title("📊 Student Event Engagement Dashboard")
 
+# 📌 **Sidebar Filters**
+st.sidebar.header("🔍 Filters")
+
+# **1️⃣ Select Event Type**
+if "Event Type" in df.columns:
+    event_types = df["Event Type"].unique()
+    selected_event = st.sidebar.selectbox("Select Event Type", ["All"] + list(event_types))
+    if selected_event != "All":
+        df = df[df["Event Type"] == selected_event]
+
+
 # Display Filtered Data
 st.subheader("📋 Event Feedback Data")
 st.dataframe(df)
