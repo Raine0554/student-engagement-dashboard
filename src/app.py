@@ -5,51 +5,51 @@ from google.oauth2.service_account import Credentials
 from textblob import TextBlob
 from sklearn.linear_model import LinearRegression
 import numpy as np
+import json
 
-# Google Sheets API Setup
-def load_data():
+# Function to read spreadsheet keys and event names from JSON
+def get_spreadsheets_from_json():
+    """Read spreadsheet keys and event names from a JSON file."""
+    with open("spreadsheets.json", "r") as file:
+        data = json.load(file)
+    return data["spreadsheets"]  # Returns a list of dictionaries
+
+# Function to load multiple Google Spreadsheets
+def load_multiple_spreadsheets():
+    """Fetch and process data from all spreadsheets dynamically."""
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     creds = Credentials.from_service_account_file("event-engagement-dashboard-b9a800641eeb.json", scopes=scope)
     client = gspread.authorize(creds)
-    spreadsheet = client.open_by_key("1mNScnRSIOcKGFjGl31XTgSEkttaStMFy6bd1Jw0KJTY")
-    worksheet = spreadsheet.worksheet("Form Responses 1")  # Ensure correct sheet name
 
-    data = worksheet.get_all_records()
-    df = pd.DataFrame(data)
+    spreadsheets_info = get_spreadsheets_from_json()
+    all_data = {}
 
-    # Rename headers for better readability
-    df.rename(columns={
-        "Overall, how would you rate this event?": "Event Rating",
-        "How do you think this event has improved your knowledge in getting an internship? ": "Internship Knowledge Gain",
-        "How did you think of the registration, ticketing experience? ": "Registration Experience",
-        "How did you feel about the communication before, during and after the event? \n\n(e.g. receiving emails, communication and instruction given prior and during the event)": "Communication Rating",
-        "Which parts of the event did you like the most?": "Best Parts",
-        "Which parts of the event do you think can be improved on?": "Improvement Areas",
-        "How did you think of the food? ": "Food Rating",
-        "What are some topics / domains that you would like to hear about in our upcoming Women In X events? \n\n(e.g. Software Engineering, Cyber Security, UI/UX...etc.) ": "Future Topics",
-        "Any overall comment or suggestion?": "Feedback Comments",
-        "How likely is it that you would recommend the event to a friend or a peer?": "Recommendation Score"
-    }, inplace=True)
+    for sheet_info in spreadsheets_info:
+        event_name = sheet_info["event_name"]
+        spreadsheet_key = sheet_info["spreadsheet_key"]
 
-    return df
+        try:
+            spreadsheet = client.open_by_key(spreadsheet_key)
+            worksheet = spreadsheet.worksheet("Form Responses 1")
+            records = worksheet.get_all_records()
+            df = pd.DataFrame(records)
+            all_data[event_name] = df  # Store DataFrame with event name as the key
+        except Exception as e:
+            print(f"Failed to load {event_name} ({spreadsheet_key}): {e}")
 
-df = load_data()
+    return all_data
 
-st.title("📊 Student Event Engagement Dashboard")
+# Automatically load spreadsheets
+sheets_data = load_multiple_spreadsheets()
 
-# 📌 **Sidebar Filters**
-st.sidebar.header("🔍 Filters")
+st.title("💻 WIT Event Engagement Dashboard")
 
-# **1️⃣ Select Event Type**
-if "Event Type" in df.columns:
-    event_types = df["Event Type"].unique()
-    selected_event = st.sidebar.selectbox("Select Event Type", ["All"] + list(event_types))
-    if selected_event != "All":
-        df = df[df["Event Type"] == selected_event]
+# Sidebar dropdown to select an event by name
+selected_event = st.sidebar.selectbox("Select an Event", list(sheets_data.keys()))
 
-
-# Display Filtered Data
-st.subheader("📋 Event Feedback Data")
+# Display DataFrame from the selected event
+df = sheets_data[selected_event]
+st.subheader(f"📋 Data from {selected_event}")
 st.dataframe(df)
 
 # Average Rating and Recommendation Score
@@ -73,3 +73,33 @@ if "Future Topics" in df.columns:
     st.bar_chart(topic_counts)
 
 st.success("Dashboard successfully loaded! 🎉")
+
+
+
+# # Google Sheets API Setup
+# def load_data():
+#     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+#     creds = Credentials.from_service_account_file("event-engagement-dashboard-b9a800641eeb.json", scopes=scope)
+#     client = gspread.authorize(creds)
+#     spreadsheet = client.open_by_key("1mNScnRSIOcKGFjGl31XTgSEkttaStMFy6bd1Jw0KJTY")
+#     worksheet = spreadsheet.worksheet("Form Responses 1")  # Ensure correct sheet name
+#     data = worksheet.get_all_records()
+#     df = pd.DataFrame(data)
+
+#     # Rename headers for better readability
+#     df.rename(columns={
+#         "Overall, how would you rate this event?": "Event Rating",
+#         "How do you think this event has improved your knowledge in getting an internship? ": "Internship Knowledge Gain",
+#         "How did you think of the registration, ticketing experience? ": "Registration Experience",
+#         "How did you feel about the communication before, during and after the event? \n\n(e.g. receiving emails, communication and instruction given prior and during the event)": "Communication Rating",
+#         "Which parts of the event did you like the most?": "Best Parts",
+#         "Which parts of the event do you think can be improved on?": "Improvement Areas",
+#         "How did you think of the food? ": "Food Rating",
+#         "What are some topics / domains that you would like to hear about in our upcoming Women In X events? \n\n(e.g. Software Engineering, Cyber Security, UI/UX...etc.) ": "Future Topics",
+#         "Any overall comment or suggestion?": "Feedback Comments",
+#         "How likely is it that you would recommend the event to a friend or a peer?": "Recommendation Score"
+#     }, inplace=True)
+
+#     return df
+
+# df = load_data()
