@@ -6,6 +6,44 @@ from textblob import TextBlob
 from sklearn.linear_model import LinearRegression
 import numpy as np
 import json
+import difflib
+
+COLUMN_MAPPING = {
+    "Event Rating": ["Event Rating", "Overall Rating", "Rating", "How would you rate this event?"],
+    "Registration Experience": ["Registration Experience", "Ticketing Experience", "How was the registration process?"],
+    "Communication Rating": ["Communication Rating", "Email Communication", "How did you feel about communication?"],
+    "Best Parts": ["Best Parts", "What did you like about the event?", "Favorite Aspects"],
+    "Improvement Areas": ["Improvement Areas", "What can be improved?", "Suggestions for Improvement"],
+    "Food Rating": ["Food Rating", "How was the food?", "Catering Feedback"],
+    "Future Topics": ["Future Topics", "Topics of Interest", "What topics would you like to see?"],
+    "Feedback Comments": ["Feedback Comments", "General Comments", "Any overall comment or suggestion?"],
+    "Recommendation Score": ["Recommendation Score", "Would you recommend?", "Likelihood to Recommend"]
+}
+
+
+def standardize_headers(df):
+    """Rename columns in the DataFrame to match standard headers."""
+    new_columns = {}
+
+    for col in df.columns:
+        matched_header = None
+        for standard_name, variations in COLUMN_MAPPING.items():
+            if col in variations:
+                matched_header = standard_name
+                break
+            # Fuzzy match: Find the closest matching column name
+            if not matched_header:
+                close_matches = difflib.get_close_matches(col, variations, n=1, cutoff=0.6)
+                if close_matches:
+                    matched_header = standard_name
+
+        if matched_header:
+            new_columns[col] = matched_header  # Rename column
+        else:
+            new_columns[col] = col  # Keep original if no match
+
+    df.rename(columns=new_columns, inplace=True)
+    return df
 
 # Function to read spreadsheet keys and event names from JSON
 def get_spreadsheets_from_json():
@@ -33,7 +71,12 @@ def load_multiple_spreadsheets():
             worksheet = spreadsheet.worksheet("Form Responses 1")
             records = worksheet.get_all_records()
             df = pd.DataFrame(records)
+            
+            # Standardize column names
+            df = standardize_headers(df)
+            
             all_data[event_name] = df  # Store DataFrame with event name as the key
+        
         except Exception as e:
             print(f"Failed to load {event_name} ({spreadsheet_key}): {e}")
 
@@ -52,13 +95,18 @@ df = sheets_data[selected_event]
 st.subheader(f"📋 Data from {selected_event}")
 st.dataframe(df)
 
-# Average Rating and Recommendation Score
-st.subheader("⭐ Event Satisfaction Overview")
-if "Event Rating" in df.columns and "Recommendation Score" in df.columns:
+# Average Rating
+st.subheader("⭐ Average Event Rating")
+if "Event Rating" in df.columns:
     df["Event Rating"] = pd.to_numeric(df["Event Rating"], errors="coerce")
-    df["Recommendation Score"] = pd.to_numeric(df["Recommendation Score"], errors="coerce")
     st.metric("Average Event Rating", round(df["Event Rating"].mean(), 2))
+
+# Recommendation Score
+st.subheader("📢 Recommendation Likelihood")
+if "Recommendation Score" in df.columns:
+    df["Recommendation Score"] = pd.to_numeric(df["Recommendation Score"], errors="coerce")
     st.metric("Recommendation Likelihood", round(df["Recommendation Score"].mean(), 2))
+
 
 # Sentiment Analysis on Feedback
 if "Feedback Comments" in df.columns:
