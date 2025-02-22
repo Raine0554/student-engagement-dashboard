@@ -1,98 +1,137 @@
 import streamlit as st
 import pandas as pd
-import gspread
-from google.oauth2.service_account import Credentials
 from textblob import TextBlob
 from sklearn.linear_model import LinearRegression
 import numpy as np
-import json
-import difflib
-
-COLUMN_MAPPING = {
-    "Event Rating": ["Event Rating", "Overall Rating", "Rating", "How would you rate this event?"],
-    "Registration Experience": ["Registration Experience", "Ticketing Experience", "How was the registration process?"],
-    "Communication Rating": ["Communication Rating", "Email Communication", "How did you feel about communication?"],
-    "Best Parts": ["Best Parts", "What did you like about the event?", "Favorite Aspects"],
-    "Improvement Areas": ["Improvement Areas", "What can be improved?", "Suggestions for Improvement"],
-    "Food Rating": ["Food Rating", "How was the food?", "Catering Feedback"],
-    "Future Topics": ["Future Topics", "Topics of Interest", "What topics would you like to see?"],
-    "Feedback Comments": ["Feedback Comments", "General Comments", "Any overall comment or suggestion?"],
-    "Recommendation Score": ["Recommendation Score", "Would you recommend?", "Likelihood to Recommend"]
-}
 
 
-def standardize_headers(df):
-    """Rename columns in the DataFrame to match standard headers."""
-    new_columns = {}
+# importing fuctions for data processing
+# from functions.categorise_events import categorise_event
+# from functions.standardise_headers import standardise_headers
+# from functions.load_google_sheet import load_multiple_spreadsheets
 
-    for col in df.columns:
-        matched_header = None
-        for standard_name, variations in COLUMN_MAPPING.items():
-            if col in variations:
-                matched_header = standard_name
-                break
-            # Fuzzy match: Find the closest matching column name
-            if not matched_header:
-                close_matches = difflib.get_close_matches(col, variations, n=1, cutoff=0.6)
-                if close_matches:
-                    matched_header = standard_name
+from functions.process_data import process_data
+from functions.load_google_sheet import load_multiple_spreadsheets
 
-        if matched_header:
-            new_columns[col] = matched_header  # Rename column
-        else:
-            new_columns[col] = col  # Keep original if no match
 
-    df.rename(columns=new_columns, inplace=True)
-    return df
+# ------------------------------------------------------------------------------------------*/
+# DATA PROCESSING
 
-# Function to read spreadsheet keys and event names from JSON
-def get_spreadsheets_from_json():
-    """Read spreadsheet keys and event names from a JSON file."""
-    with open("spreadsheets.json", "r") as file:
-        data = json.load(file)
-    return data["spreadsheets"]  # Returns a list of dictionaries
+# # Automatically load spreadsheets
+# sheets_data = load_multiple_spreadsheets()
 
-# Function to load multiple Google Spreadsheets
-def load_multiple_spreadsheets():
-    """Fetch and process data from all spreadsheets dynamically."""
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = Credentials.from_service_account_file("event-engagement-dashboard-b9a800641eeb.json", scopes=scope)
-    client = gspread.authorize(creds)
+# # Creating a custom dataframe with processed values
+# processed_data = []
+# for event_name, df in sheets_data.items():
+#     # Ensure "Event Rating" exists before applying mean()
+#     if "Event Rating" in df.columns:
+#         df["Event Rating"] = pd.to_numeric(df["Event Rating"], errors="coerce")  # Convert to numeric safely
+#         avg_rating = df["Event Rating"].mean()
+#     else:
+#         avg_rating = None  # Assign None if column is missing
+#     # total_attendance = df["Attendance"].sum()
 
-    spreadsheets_info = get_spreadsheets_from_json()
-    all_data = {}
+#     event_type = categorise_event(event_name)  # Reusing event categorization function
 
-    for sheet_info in spreadsheets_info:
-        event_name = sheet_info["event_name"]
-        spreadsheet_key = sheet_info["spreadsheet_key"]
+#     processed_data.append({
+#         "Event Name": event_name,
+#         "Event Type": event_type,
+#         "Avg Event Rating": round(avg_rating, 2),
+#         # "Attendance No.": total_attendance
+#     })
 
-        try:
-            spreadsheet = client.open_by_key(spreadsheet_key)
-            worksheet = spreadsheet.worksheet("Form Responses 1")
-            records = worksheet.get_all_records()
-            df = pd.DataFrame(records)
-            
-            # Standardize column names
-            df = standardize_headers(df)
-            
-            all_data[event_name] = df  # Store DataFrame with event name as the key
-        
-        except Exception as e:
-            print(f"Failed to load {event_name} ({spreadsheet_key}): {e}")
+# # Convert to DataFrame
+# df_processed = pd.DataFrame(processed_data)
 
-    return all_data
-
-# Automatically load spreadsheets
 sheets_data = load_multiple_spreadsheets()
+df_processed = process_data()
+st.write("Preview of df_processed:", df_processed.head())
 
-st.title("💻 WIT Event Engagement Dashboard")
+
+st.title("💻 WIT Event Engagement")
+# ------------------------------------------------------------------------------------------*/
+
+with st.expander("How to use this app"):
+    st.markdown(
+        """
+        ### **How to use the app**
+        - **Step 1**: Select a Python library of interest in the `Select a Partner tech used in the app` multi-select widget.
+        - **Step 2**: Query results should appear after a short page refresh.
+
+        ### **Tips for searching**
+        - To retrieve apps built with LangChain **OR** Weaviate, make sure that the `Boolean Search` parameter in the sidebar is set to **`OR`**.
+        - To retrieve apps built with LangChain **AND** Weaviate, make sure that the `Boolean Search` parameter in the sidebar is set to **`AND`**.
+        
+        ### **Disclaimer**
+        - To retrieve apps built with LangChain **OR** Weaviate, make sure that the `Boolean Search` parameter in the sidebar is set to **`OR`**.
+        - To retrieve apps built with LangChain **AND** Weaviate, make sure that the `Boolean Search` parameter in the sidebar is set to **`AND`**.
+        
+        """,
+        unsafe_allow_html=True
+    )
+
+
+
+# ------------------------------------------------------------------------------------------*/
+st.write("")  # Adds a single empty line
+st.subheader("📋 Top 5 Highest Ranked Events")
+
+# Sort by highest rating first
+df_top_5 = df_processed.sort_values(by="Avg Event Rating", ascending=False).head(5)
+
+# Display top 5 events as a numbered list
+for i, event in enumerate(df_top_5["Event Name"], start=1):
+    st.write(f"{i}. {event}")
+
+# ------------------------------------------------------------------------------------------*/
+st.markdown("---")
+st.subheader("📊 Event Statistics Overview")
+
+# Get statistics
+total_events = len(df_processed)
+highest_rating = df_processed["Avg Event Rating"].max()
+lowest_rating = df_processed["Avg Event Rating"].min()
+average_rating = round(df_processed["Avg Event Rating"].mean(), 2)
+
+# Define colored box template
+def colored_box(label, value, color):
+    return f"""
+    <div style="background-color: {color}; padding: 15px; border-radius: 10px; text-align: center; width: 150px; font-size: 16px; font-weight: bold; color: white;">
+        {label}<br><span style="font-size: 20px;">{value}</span>
+    </div>
+    """
+
+# Arrange boxes in a row using columns
+col1, col2, col3, col4 = st.columns(4)
+
+# Display each metric with a colored box
+with col1:
+    st.markdown(colored_box("Total Events", total_events, "#3498db"), unsafe_allow_html=True)
+with col2:
+    st.markdown(colored_box("Highest Rating", highest_rating, "#2ecc71"), unsafe_allow_html=True)
+with col3:
+    st.markdown(colored_box("Lowest Rating", lowest_rating, "#e74c3c"), unsafe_allow_html=True)
+with col4:
+    st.markdown(colored_box("Average Rating", average_rating, "#f39c12"), unsafe_allow_html=True)
+
+# ------------------------------------------------------------------------------------------*/
+
+st.markdown("---")
+
+st.subheader("Overview of All Events")
+st.dataframe(df_processed)
+
+
+
+
 
 # Sidebar dropdown to select an event by name
-selected_event = st.sidebar.selectbox("Select an Event", list(sheets_data.keys()))
+selected_event = st.sidebar.selectbox("Select a Specific Event", list(sheets_data.keys()))
+# event_type = st.sidebar.selectbox("Select Event Type")
 
 # Display DataFrame from the selected event
 df = sheets_data[selected_event]
-st.subheader(f"📋 Data from {selected_event}")
+st.subheader(f"📋 Data from {selected_event}", )
 st.dataframe(df)
 
 # Average Rating
