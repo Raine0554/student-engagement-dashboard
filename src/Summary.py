@@ -14,39 +14,20 @@ from functions.process_data import process_data
 from functions.load_google_sheet import load_multiple_spreadsheets
 
 
+st.set_page_config(
+    page_title="Overview of Events",  # Change this to your desired title
+    page_icon="📊",  # Optional: Add a favicon (can be an emoji or a URL)
+    layout="wide"  # Optional: Set the page layout (wide or centered)
+)
+
+st.title("Welcome to the WIT Event Engagement Dashboard!")
+
+
 # ------------------------------------------------------------------------------------------*/
-# DATA PROCESSING
-
-# # Automatically load spreadsheets
-# sheets_data = load_multiple_spreadsheets()
-
-# # Creating a custom dataframe with processed values
-# processed_data = []
-# for event_name, df in sheets_data.items():
-#     # Ensure "Event Rating" exists before applying mean()
-#     if "Event Rating" in df.columns:
-#         df["Event Rating"] = pd.to_numeric(df["Event Rating"], errors="coerce")  # Convert to numeric safely
-#         avg_rating = df["Event Rating"].mean()
-#     else:
-#         avg_rating = None  # Assign None if column is missing
-#     # total_attendance = df["Attendance"].sum()
-
-#     event_type = categorise_event(event_name)  # Reusing event categorization function
-
-#     processed_data.append({
-#         "Event Name": event_name,
-#         "Event Type": event_type,
-#         "Avg Event Rating": round(avg_rating, 2),
-#         # "Attendance No.": total_attendance
-#     })
-
-# # Convert to DataFrame
-# df_processed = pd.DataFrame(processed_data)
+# Loading the data
 
 sheets_data = load_multiple_spreadsheets()
 df_processed = process_data()
-st.write("Preview of df_processed:", df_processed.head())
-
 
 st.title("💻 WIT Event Engagement")
 # ------------------------------------------------------------------------------------------*/
@@ -117,49 +98,12 @@ with col4:
 # ------------------------------------------------------------------------------------------*/
 
 st.markdown("---")
-
 st.subheader("Overview of All Events")
 st.dataframe(df_processed)
 
 
-
-
-
-# Sidebar dropdown to select an event by name
-selected_event = st.sidebar.selectbox("Select a Specific Event", list(sheets_data.keys()))
-# event_type = st.sidebar.selectbox("Select Event Type")
-
-# Display DataFrame from the selected event
-df = sheets_data[selected_event]
-st.subheader(f"📋 Data from {selected_event}", )
-st.dataframe(df)
-
-# Average Rating
-st.subheader("⭐ Average Event Rating")
-if "Event Rating" in df.columns:
-    df["Event Rating"] = pd.to_numeric(df["Event Rating"], errors="coerce")
-    st.metric("Average Event Rating", round(df["Event Rating"].mean(), 2))
-
-# Recommendation Score
-st.subheader("📢 Recommendation Likelihood")
-if "Recommendation Score" in df.columns:
-    df["Recommendation Score"] = pd.to_numeric(df["Recommendation Score"], errors="coerce")
-    st.metric("Recommendation Likelihood", round(df["Recommendation Score"].mean(), 2))
-
-
-# Sentiment Analysis on Feedback
-if "Feedback Comments" in df.columns:
-    st.subheader("💬 Sentiment Analysis on Feedback")
-    df["Sentiment"] = df["Feedback Comments"].dropna().apply(lambda x: TextBlob(str(x)).sentiment.polarity)
-    st.bar_chart(df.groupby("Event Rating")["Sentiment"].mean())
-
-# Future Event Topics Insights
-if "Future Topics" in df.columns:
-    st.subheader("📌 Suggested Future Topics")
-    topic_counts = df["Future Topics"].dropna().str.split(",").explode().str.strip().value_counts()
-    st.bar_chart(topic_counts)
-
 st.success("Dashboard successfully loaded! 🎉")
+
 
 
 
