@@ -12,7 +12,9 @@ COLUMN_MAPPING = {
     "Recommendation Score": ["Recommendation Score", "Would you recommend?", "Likelihood to Recommend"]
 }
 
+# ------------------------------------------------------------------------------------------*/
 # Function to auto-match inconsistent column headers to pre-defined header names
+
 def standardise_headers(df):
     """Rename columns in the DataFrame to match standard headers."""
     new_columns = {}
