@@ -8,12 +8,10 @@
   <p>An Interactive UI for the Women in Tech Unimelb</p>
     <a href="https://dezoomcamp.streamlit.app/" target="_blank">Visit App</a>
     🌌
-    <a href="https://github.com/Hamagistral/de-zoomcamp-ui/issues" target="_blank">Request Feature</a>
 </div>
 <br>
 <div align="center">
       <a href="https://dezoomcamp.streamlit.app/"><img src="https://static.streamlit.io/badges/streamlit_badge_black_white.svg"/></a>
-      <img src="https://img.shields.io/github/stars/hamagistral/de-zoomcamp-ui?color=blue&style=social"/>
 </div>
 
 <hr>
@@ -68,8 +66,4 @@ streamlit run DE_Zoomcamp.py
 
 4. Access the app in your browser at http://localhost:8501
 
-## 📨 Contact Me
 
-[LinkedIn](https://www.linkedin.com/in/hamza-elbelghiti/) •
-[Website](https://hamagistral.me) •
-[Gmail](hamza.lbelghiti@gmail.com)
