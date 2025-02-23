@@ -1,5 +1,3 @@
-# WIT-event-engagement-dashboard
-
 <div align="center">
   <div id="user-content-toc">
     <ul>
