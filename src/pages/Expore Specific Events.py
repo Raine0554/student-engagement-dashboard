@@ -37,14 +37,33 @@ st.set_page_config(
 
 # Dropdown to select an event by name
 # CHANGE THIS
-selected_event = st.selectbox("Select a Specific Event", list(google_forms_data.keys()))
+
+# Load data only once and store it in session state
+if "humanitix_data" not in st.session_state:
+    from functions.load_humanitix_sheets import load_humanitix_spreadsheets
+    st.session_state.humanitix_data = load_humanitix_spreadsheets()  # Save it persistently
+
+# Access data from session state
+humanitix_data = st.session_state.humanitix_data
+
+# Debugging: Check if "events-report" exists
+if "events-report" not in humanitix_data:
+    st.error("❌ 'events-report' is missing from Humanitix data. Check API response.")
+    st.stop()  # Stop execution to avoid further errors
+
 
 event_data = humanitix_data["events-report"]
 attendee_data = humanitix_data["attendee-report"]
 
-# Filter the row where "Event Name" matches selected_event
-filtered_row = event_data[event_data["Event Name"] == selected_event]
+# Normalize event names to avoid case-sensitivity and trailing spaces
+event_data["Event Name"] = event_data["Event Name"].str.strip().str.lower()
+event_names = event_data["Event Name"].unique()  # Get unique event names
 
+# Select an event
+selected_event = st.selectbox("Select a Specific Event", event_names)
+
+# Ensure the selected event is case-insensitive and space-normalized
+filtered_row = event_data[event_data["Event Name"].str.lower() == selected_event.lower()]
 # ------------------------------------------------------------------------------------------*/
 # BASIC EVENT INFO - WORKS
 
@@ -52,13 +71,13 @@ attendance = filtered_row["Sold"].values[0]  # Get the first matching value
 st.write(f"Tickets Sold: {attendance}")
 
 location = filtered_row["Location"].values[0]  # Get the first matching value
-st.write(f"Location: {location}")
-
+st.write(f"📍 Location: {location}")
+    
 date = filtered_row["Date"].values[0]  # Get the first matching value
-st.write(f"Date: {date}")
+st.write(f"📅 Date: {date}")
 
 time = filtered_row["Time"].values[0]  # Get the first matching value
-st.write(f"Time: {time}")
+st.write(f"⏰ Time: {time}")
 
 
 # ------------------------------------------------------------------------------------------*/
