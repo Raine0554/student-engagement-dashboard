@@ -11,13 +11,14 @@ import numpy as np
 # from functions.load_google_sheet import load_multiple_spreadsheets
 
 from functions.process_data import process_data
-from functions.load_google_sheet import load_multiple_spreadsheets
+from functions.load_google_sheet import load_forms_spreadsheets
+from functions.load_humanitix_sheets import load_humanitix_spreadsheets
 
 
 st.set_page_config(
     page_title="Overview of Events",  # Change this to your desired title
     page_icon="📊",  # Optional: Add a favicon (can be an emoji or a URL)
-    layout="wide"  # Optional: Set the page layout (wide or centered)
+    layout="centered"  # Optional: Set the page layout (wide or centered)
 )
 
 st.title("Welcome to the WIT Event Engagement Dashboard!")
@@ -26,7 +27,9 @@ st.title("Welcome to the WIT Event Engagement Dashboard!")
 # ------------------------------------------------------------------------------------------*/
 # Loading the data
 
-sheets_data = load_multiple_spreadsheets()
+google_forms_data = load_forms_spreadsheets()
+humanitix_data = load_humanitix_spreadsheets()
+
 df_processed = process_data()
 
 st.title("💻 WIT Event Engagement")

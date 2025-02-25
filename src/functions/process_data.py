@@ -3,7 +3,7 @@ import pandas as pd
 # importing fuctions for data processing
 from functions.categorise_events import categorise_event
 from functions.standardise_headers import standardise_headers
-from functions.load_google_sheet import load_multiple_spreadsheets
+from functions.load_google_sheet import load_forms_spreadsheets
 
 
 # ------------------------------------------------------------------------------------------*/
@@ -12,7 +12,7 @@ from functions.load_google_sheet import load_multiple_spreadsheets
 
 def process_data():
     # Automatically load spreadsheets into a list of dictionaries
-    sheets_data = load_multiple_spreadsheets()
+    sheets_data = load_forms_spreadsheets()
     
     # Creating a custom dataframe with processed values
     processed_data = []
