@@ -4,6 +4,39 @@ from textblob import TextBlob
 from sklearn.linear_model import LinearRegression
 import numpy as np
 
+
+st.set_page_config(
+    page_title="My App",  # Change this to your app title
+    page_icon="🔭",  # Optional: Set an emoji or image as favicon
+    layout="centered"  # Ensures content is not full-width
+)
+
+page_bg = """
+<style>
+    /* Change main page background */
+    .stApp {
+        background-color: #212751; /* Light gray */
+    }
+
+    /* Change sidebar background */
+    section[data-testid="stSidebar"] {
+        background-color: #1A1A3D; /* Light blue-gray */
+    }
+
+    /* Change top navbar (Streamlit menu bar) */
+    header[data-testid="stHeader"] {
+        background-color: #212751; /* Darker blue */
+    }
+
+    /* Change font color in the navbar */
+    header[data-testid="stHeader"] * {
+        color: white; /* Change text/icon color to white */
+    }
+</style>
+"""
+
+st.markdown(page_bg, unsafe_allow_html=True)
+
 # # Sidebar dropdown to select an event by name
 # selected_event = st.sidebar.selectbox("Select a Specific Event", list(sheets_data.keys()))
 # # event_type = st.sidebar.selectbox("Select Event Type")
@@ -26,18 +59,12 @@ print(humanitix_data)
 
 # ------------------------------------------------------------------------------------------*/
 
-st.set_page_config(
-    page_title="My App",  # Change this to your app title
-    page_icon="🔭",  # Optional: Set an emoji or image as favicon
-    layout="centered"  # Ensures content is not full-width
-)
+
 
 # ------------------------------------------------------------------------------------------*/
 # PROCESS HUMANITIX DATA
 
-# Dropdown to select an event by name
-# CHANGE THIS
-
+# To prevent Streamlit from resetting humanitix_data, store it in st.session_state:
 # Load data only once and store it in session state
 if "humanitix_data" not in st.session_state:
     from functions.load_humanitix_sheets import load_humanitix_spreadsheets
@@ -51,6 +78,8 @@ if "events-report" not in humanitix_data:
     st.error("❌ 'events-report' is missing from Humanitix data. Check API response.")
     st.stop()  # Stop execution to avoid further errors
 
+# ------------------------------------------------------------------------------------------*/
+# FILTER DATA BY EVENT NAME SELECTED
 
 event_data = humanitix_data["events-report"]
 attendee_data = humanitix_data["attendee-report"]
@@ -59,11 +88,14 @@ attendee_data = humanitix_data["attendee-report"]
 event_data["Event Name"] = event_data["Event Name"].str.strip().str.lower()
 event_names = event_data["Event Name"].unique()  # Get unique event names
 
+
+st.title("🔭 Explore Specific Events")
 # Select an event
 selected_event = st.selectbox("Select a Specific Event", event_names)
 
 # Ensure the selected event is case-insensitive and space-normalized
 filtered_row = event_data[event_data["Event Name"].str.lower() == selected_event.lower()]
+
 # ------------------------------------------------------------------------------------------*/
 # BASIC EVENT INFO - WORKS
 
@@ -83,7 +115,7 @@ st.write(f"⏰ Time: {time}")
 # ------------------------------------------------------------------------------------------*/
 
 st.markdown("---")
-st.subheader("🔭 Explore Specific Events")
+
 
 
 # event_type = st.sidebar.selectbox("Select Event Type")

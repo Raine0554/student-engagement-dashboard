@@ -21,6 +21,30 @@ st.set_page_config(
     layout="centered"  # Optional: Set the page layout (wide or centered)
 )
 
+page_bg = """
+<style>
+    /* Change main page background */
+    .stApp {
+        background-color: #212751; /* Light gray */
+    }
+
+    /* Change sidebar background */
+    section[data-testid="stSidebar"] {
+        background-color: #1A1A3D; /* Light blue-gray */
+    }
+
+    /* Change top navbar (Streamlit menu bar) */
+    header[data-testid="stHeader"] {
+        background-color: #212751; /* Darker blue */
+    }
+
+    /* Change font color in the navbar */
+    header[data-testid="stHeader"] * {
+        color: white; /* Change text/icon color to white */
+    }
+</style>
+"""
+
 st.title("Welcome to the WIT Event Engagement Dashboard!")
 
 
