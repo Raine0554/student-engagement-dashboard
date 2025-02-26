@@ -3,7 +3,7 @@ import pandas as pd
 from textblob import TextBlob
 from sklearn.linear_model import LinearRegression
 import numpy as np
-
+from rapidfuzz import process, fuzz
 
 st.set_page_config(
     page_title="My App",  # Change this to your app title
@@ -58,10 +58,6 @@ humanitix_data = load_humanitix_spreadsheets()
 print(humanitix_data)
 
 # ------------------------------------------------------------------------------------------*/
-
-
-
-# ------------------------------------------------------------------------------------------*/
 # PROCESS HUMANITIX DATA
 
 # To prevent Streamlit from resetting humanitix_data, store it in st.session_state:
@@ -112,16 +108,49 @@ time = filtered_row["Time"].values[0]  # Get the first matching value
 st.write(f"⏰ Time: {time}")
 
 
+# ---------------------------------------------------------------------------------
+# MATCHING HUMANITIX EVENT TO CORESPONDING GOOGLE FORMS
+
+# Extract all event names from google_forms_data (dictionary keys)
+google_event_names = list(google_forms_data.keys())
+
+# Find the closest match
+best_match, score, _ = process.extractOne(selected_event, google_event_names, scorer=fuzz.partial_ratio)
+
+# Only use the match if it's above a confidence threshold (e.g., 80%)
+if score >= 80:
+    matched_event = best_match
+    st.write(f"🔍 Best Match Found: {matched_event} (Score: {score}%)")
+else:
+    matched_event = None
+    st.error("❌ No good match found for this event in Google Forms data.")
+
+# Only proceed if a match was found
+
+# matched_event = best_match
+if matched_event:
+    df = google_forms_data[matched_event]
+    st.write(f"📋 Survey data for: {matched_event}")
+    st.dataframe(df)
+
+
 # ------------------------------------------------------------------------------------------*/
 
+
+
+
+
+
+
 st.markdown("---")
+
 
 
 
 # event_type = st.sidebar.selectbox("Select Event Type")
 
 # Display DataFrame from the selected event
-df = google_forms_data[selected_event]
+# df = google_forms_data[selected_event]
 st.subheader(f"📋 Basic stats from {selected_event}", )
 
 # if "Event Rating" in df.columns:
